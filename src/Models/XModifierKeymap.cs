@@ -12,5 +12,5 @@ namespace X11cs.Models;
 public unsafe struct XModifierKeymap
 {
     public int MaxKeyPerMod;  /* The server's max # of keys per modifier */
-    public byte* ModifierMap;	/* An 8 by max_keypermod array of modifiers */
+    public byte* ModifierMap;	/* An 8 by maxKeyPerMod array of modifiers */
 }

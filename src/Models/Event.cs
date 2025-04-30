@@ -24,10 +24,10 @@ public enum Event : int
     VisibilityNotify = 15,
     CreateNotify = 16,
     DestroyNotify = 17,
-    UnmapNotify = 18,
+    UnMapNotify = 18,
     MapNotify = 19,
     MapRequest = 20,
-    ReparentNotify = 21,
+    ReParentNotify = 21,
     ConfigureNotify = 22,
     ConfigureRequest = 23,
     GravityNotify = 24,
@@ -42,5 +42,5 @@ public enum Event : int
     ClientMessage = 33,
     MappingNotify = 34,
     GenericEvent = 35,
-    LASTEvent = 36
+    LastEvent = 36
 }
