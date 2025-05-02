@@ -21,6 +21,6 @@ public unsafe struct _XInternalAsync
      * data is the closure stored in this struct.
      * The handler returns True iff it handled this reply.
      */
-    public delegate* unmanaged[Cdecl]<Display*, xReply*, sbyte*, int, IntPtr, int> Handler;
+    public delegate* unmanaged[Cdecl]<Display*, XReply*, sbyte*, int, IntPtr, int> Handler;
     public IntPtr Data;
 }
