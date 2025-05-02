@@ -24,7 +24,7 @@ public struct xReply
     [FieldOffset(0)]
     public XGrabPointerReply GrabPointer;
     [FieldOffset(0)]
-    public xGrabKeyboardReply GrabKeyboard;
+    public XGrabPointerReply GrabKeyboard;
     [FieldOffset(0)]
     public XQueryPointerReply Pointer;
     [FieldOffset(0)]
@@ -40,43 +40,43 @@ public struct xReply
     [FieldOffset(0)]
     public XGetFontPathReply FontPath;
     [FieldOffset(0)]
-    public xGetImageReply Image;
+    public XGetImageReply Image;
     [FieldOffset(0)]
-    public xListInstalledColormapsReply Colormaps;
+    public XListInstalledColormapsReply Colormaps;
     [FieldOffset(0)]
-    public xAllocColorReply AllocColor;
+    public XAllocColorReply AllocColor;
     [FieldOffset(0)]
-    public xAllocNamedColorReply AllocNamedColor;
+    public XAllocNamedColorReply AllocNamedColor;
     [FieldOffset(0)]
-    public xAllocColorCellsReply ColorCells;
+    public XAllocColorCellsReply ColorCells;
     [FieldOffset(0)]
-    public xAllocColorPlanesReply ColorPlanes;
+    public XAllocColorPlanesReply ColorPlanes;
     [FieldOffset(0)]
-    public xQueryColorsReply Colors;
+    public XQueryColorsReply Colors;
     [FieldOffset(0)]
-    public xLookupColorReply LookupColor;
+    public XLookupColorReply LookupColor;
     [FieldOffset(0)]
     public xQueryBestSizeReply BestSize;
     [FieldOffset(0)]
-    public xQueryExtensionReply Extension;
+    public XQueryExtensionReply Extension;
     [FieldOffset(0)]
-    public xListExtensionsReply Extensions;
+    public XListExtensionsReply Extensions;
     [FieldOffset(0)]
-    public xSetModifierMappingReply SetModifierMapping;
+    public XSetMappingReply SetModifierMapping;
     [FieldOffset(0)]
-    public xGetModifierMappingReply GetModifierMapping;
+    public XGetModifierMappingReply GetModifierMapping;
     [FieldOffset(0)]
-    public xSetPointerMappingReply SetPointerMapping;
+    public XSetMappingReply SetPointerMapping;
     [FieldOffset(0)]
-    public xGetKeyboardMappingReply GetKeyboardMapping;
+    public XGetKeyboardMappingReply GetKeyboardMapping;
     [FieldOffset(0)]
-    public xGetPointerMappingReply GetPointerMapping;
+    public XGetPointerMappingReply GetPointerMapping;
     [FieldOffset(0)]
-    public xGetPointerControlReply PointerControl;
+    public XGetPointerControlReply PointerControl;
     [FieldOffset(0)]
-    public xGetScreenSaverReply ScreenSaver;
+    public XGetScreenSaverReply ScreenSaver;
     [FieldOffset(0)]
-    public xListHostsReply Hosts;
+    public XListHostsReply Hosts;
     [FieldOffset(0)]
     public XError Error;
     [FieldOffset(0)]
