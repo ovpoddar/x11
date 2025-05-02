@@ -3,7 +3,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace X11cs.Models;
 [StructLayout(LayoutKind.Explicit, Size = 32)]
-public struct xReply
+public struct XReply
 {
     [FieldOffset(0)]
     public XGenericReply Generic;
