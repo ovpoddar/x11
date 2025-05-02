@@ -3,7 +3,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace X11cs.Models;
 [StructLayout(LayoutKind.Explicit, Size = 32)]
-public struct XReply
+public struct xReply
 {
     [FieldOffset(0)]
     public XGenericReply Generic;
@@ -24,7 +24,7 @@ public struct XReply
     [FieldOffset(0)]
     public XGrabPointerReply GrabPointer;
     [FieldOffset(0)]
-    public XGrabPointerReply GrabKeyboard;
+    public xGrabKeyboardReply GrabKeyboard;
     [FieldOffset(0)]
     public XQueryPointerReply Pointer;
     [FieldOffset(0)]
@@ -40,43 +40,43 @@ public struct XReply
     [FieldOffset(0)]
     public XGetFontPathReply FontPath;
     [FieldOffset(0)]
-    public XGetImageReply Image;
+    public xGetImageReply Image;
     [FieldOffset(0)]
-    public XListInstalledColormapsReply Colormaps;
+    public xListInstalledColormapsReply Colormaps;
     [FieldOffset(0)]
-    public XAllocColorReply AllocColor;
+    public xAllocColorReply AllocColor;
     [FieldOffset(0)]
-    public XAllocNamedColorReply AllocNamedColor;
+    public xAllocNamedColorReply AllocNamedColor;
     [FieldOffset(0)]
-    public XAllocColorCellsReply ColorCells;
+    public xAllocColorCellsReply ColorCells;
     [FieldOffset(0)]
-    public XAllocColorPlanesReply ColorPlanes;
+    public xAllocColorPlanesReply ColorPlanes;
     [FieldOffset(0)]
-    public XQueryColorsReply Colors;
+    public xQueryColorsReply Colors;
     [FieldOffset(0)]
-    public XLookupColorReply LookupColor;
+    public xLookupColorReply LookupColor;
     [FieldOffset(0)]
     public xQueryBestSizeReply BestSize;
     [FieldOffset(0)]
-    public XQueryExtensionReply Extension;
+    public xQueryExtensionReply Extension;
     [FieldOffset(0)]
-    public XListExtensionsReply Extensions;
+    public xListExtensionsReply Extensions;
     [FieldOffset(0)]
-    public XSetMappingReply SetModifierMapping;
+    public xSetModifierMappingReply SetModifierMapping;
     [FieldOffset(0)]
-    public XGetModifierMappingReply GetModifierMapping;
+    public xGetModifierMappingReply GetModifierMapping;
     [FieldOffset(0)]
-    public XSetMappingReply SetPointerMapping;
+    public xSetPointerMappingReply SetPointerMapping;
     [FieldOffset(0)]
-    public XGetKeyboardMappingReply GetKeyboardMapping;
+    public xGetKeyboardMappingReply GetKeyboardMapping;
     [FieldOffset(0)]
-    public XGetPointerMappingReply GetPointerMapping;
+    public xGetPointerMappingReply GetPointerMapping;
     [FieldOffset(0)]
-    public XGetPointerControlReply PointerControl;
+    public xGetPointerControlReply PointerControl;
     [FieldOffset(0)]
-    public XGetScreenSaverReply ScreenSaver;
+    public xGetScreenSaverReply ScreenSaver;
     [FieldOffset(0)]
-    public XListHostsReply Hosts;
+    public xListHostsReply Hosts;
     [FieldOffset(0)]
     public XError Error;
     [FieldOffset(0)]
