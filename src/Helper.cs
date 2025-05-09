@@ -16,12 +16,12 @@ internal static class Helper
         out int screenNumber,
         out ProtocolType protocol)
     {
-        socket = ReadOnlySpan<char>.Empty;
-        host = ReadOnlySpan<char>.Empty;
+        socket = [];
+        host = [];
         displayNumber = 0;
         screenNumber = 0;
-        protocol = ProtocolType.Tcp;
-
+        protocol = ProtocolType.IP;
+        
         if (display.Length == 0)
             return false;
 
@@ -36,7 +36,9 @@ internal static class Helper
             var slashIndex = display.IndexOf('/');
             if (slashIndex >= 0)
             {
-                Enum.Parse<ProtocolType>(display[0..slashIndex].ToString(), true);
+                if (!Enum.TryParse<ProtocolType>(display[0..slashIndex].ToString(), true, out protocol))
+                    protocol = ProtocolType.Tcp;
+
                 host = display[(slashIndex + 1)..colonIndex];
             }
             else
@@ -45,10 +47,10 @@ internal static class Helper
             }
         }
 
-        var displayNumberStart = display[(colonIndex + 1)..];
+        var displayNumberStart = display[colonIndex..];
         if (displayNumberStart.Length == 0)
             return false;
-
+        
         var dotIndex = displayNumberStart.IndexOf('.');
         if (dotIndex < 0)
         {
@@ -56,10 +58,10 @@ internal static class Helper
         }
         else
         {
-            if (!int.TryParse(displayNumberStart.Slice(0, dotIndex), out displayNumber))
+            if (!int.TryParse(displayNumberStart[1..dotIndex], out displayNumber))
                 return false;
 
-            return int.TryParse(displayNumberStart.Slice(dotIndex + 1), out screenNumber);
+            return int.TryParse(displayNumberStart[(dotIndex + 1)..], out screenNumber);
         }
     }
 }

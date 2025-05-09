@@ -31,3 +31,5 @@ else
 
 if (!soc.Connected)
     return;
+
+Console.WriteLine("alive here");
