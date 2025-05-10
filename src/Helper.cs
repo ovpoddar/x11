@@ -64,4 +64,20 @@ internal static class Helper
             return int.TryParse(displayNumberStart[(dotIndex + 1)..], out screenNumber);
         }
     }
+
+    public static (string authName, string authData) GetAuthInfo()
+    {
+        var filePath = Environment.GetEnvironmentVariable("XAUTHORITY");
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            filePath = Environment.GetEnvironmentVariable("HOME");
+            if (string.IsNullOrWhiteSpace(filePath))
+                throw new InvalidOperationException("XAUTHORITY not set and HOME not set");
+            filePath = Path.Join(filePath, ".Xauthority");
+        }
+        if (!File.Exists(filePath))
+            return ("", "");
+
+        throw new NotImplementedException("i don't have any file called .Xauthority on my system so i can't parse it");
+    }
 }
