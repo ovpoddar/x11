@@ -22,7 +22,7 @@ internal static class Helper
         screenNumber = 0;
         protocol = ProtocolType.IP;
         
-        if (display.Length == 0)
+        if (display.IsEmpty)
             return false;
 
         var colonIndex = display.LastIndexOf(':');
@@ -30,20 +30,20 @@ internal static class Helper
             return false;
 
         if (display[0] == '/')
-            socket = display[0..colonIndex];
+            socket = display[..colonIndex];
         else
         {
             var slashIndex = display.IndexOf('/');
             if (slashIndex >= 0)
             {
-                if (!Enum.TryParse<ProtocolType>(display[0..slashIndex].ToString(), true, out protocol))
+                if (!Enum.TryParse<ProtocolType>(display[..slashIndex].ToString(), true, out protocol))
                     protocol = ProtocolType.Tcp;
 
                 host = display[(slashIndex + 1)..colonIndex];
             }
             else
             {
-                host = display[0..colonIndex];
+                host = display[..colonIndex];
             }
         }
 

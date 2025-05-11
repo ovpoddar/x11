@@ -9,6 +9,12 @@ public static class HandshakeHandler
 {
     public static HandshakeResponse MakeHandshake(Stream stream)
     {
+        MakeCall(stream);
+        return new HandshakeResponse(stream);
+    }
+
+    static void MakeCall(Stream stream)
+    {
         var (authName, authData) = Helper.GetAuthInfo();
         var namePaddedLength = AddPadding(authName.Length);
         var scratchBufferSize = 12
@@ -34,13 +40,6 @@ public static class HandshakeHandler
         Encoding.ASCII.GetBytes(authData, scratchBuffer[writingIndex..]);
         writingIndex += authData.Length;
         stream.Write(scratchBuffer);
-
-        byte[] c = new byte[1024];
-
-        var read = stream.Read(c, 0, c.Length);
-        Console.WriteLine(string.Join(",", c.Take(read)));
-
-        return default;
     }
 
     private static int AddPadding(int pad) =>
