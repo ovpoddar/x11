@@ -16,6 +16,7 @@ public struct HandshakeResponse
     public string? StatusMessage { get; private set; }
     public string? VendorName { get; private set; }
     public HandshakeResponseSuccessBody HandshakeResponseSuccessBody;
+    public Format[]? Formats;
     public HandshakeResponse(Stream stream)
     {
         Span<byte> scratchBuffer = stackalloc byte[8];
@@ -52,15 +53,28 @@ public struct HandshakeResponse
                         // this is a copy not a ref.
                         HandshakeResponseSuccessBody = Unsafe.As<byte, HandshakeResponseSuccessBody>(ref scratchBuffer[0]);
                     }
+                    var totalExtraData = responseHead.HandshakeResponseHeadSuccess.AdditionalDataLength - 32;
+                    var readingIndex = 0;
                     {
-                        Span<byte> reason = stackalloc byte[responseHead.HandshakeResponseHeadSuccess.AdditionalDataLength - 32];
-                        stream.ReadExactly(reason);
-                        System.Console.WriteLine(String.Join(", ", reason.ToArray()));
+                        Span<byte> vendor = stackalloc byte[AddPadding(HandshakeResponseSuccessBody.VendorLength)];
+                        stream.ReadExactly(vendor);
+                        VendorName = Encoding.ASCII.GetString(vendor[..HandshakeResponseSuccessBody.VendorLength]);
+                        readingIndex += vendor.Length;
                     }
+                    {
+                        Span<byte> format = stackalloc byte[HandshakeResponseSuccessBody.FormatsNumber * 8];
+                        stream.ReadExactly(format);
+                        Formats = MemoryMarshal.Cast<byte, Format>(format).ToArray();
+                        readingIndex += format.Length;
+                    }
+                    
                 }
                 break;
             default:
                 break;
         }
     }
+
+    private static int AddPadding(int pad) =>
+        pad + ((4 - (pad & 3)) & 3);
 }
