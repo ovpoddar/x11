@@ -50,8 +50,6 @@ public struct HandshakeResponse
 
             case HandshakeStatus.Success:
                 {
-                    // todo: Visual size is off by a lot might made a mistake while parsing
-                    // need to find the bug.
                     var totalExtraData = responseHead.HandshakeResponseHeadSuccess.AdditionalDataLength;
                     var buffer = ArrayPool<byte>.Shared.Rent(totalExtraData);
                     stream.ReadExactly(buffer, 0, totalExtraData);
@@ -74,6 +72,10 @@ public struct HandshakeResponse
                     readingIndex += Marshal.SizeOf<Screen>();
 
                     Depths = new Depth[Screen.Value.NumberOfDepth];
+                    ArrayPool<byte>.Shared.Return(buffer);
+                    // todo: Visual size is off by a lot might made a mistake while parsing
+                    // need to find the bug.
+                    return;
                     for (int i = 0; i < Depths.Length; i++)
                     {
                         bufferSlice = buffer.AsSpan(readingIndex, Marshal.SizeOf<_Depth>());
@@ -85,10 +87,10 @@ public struct HandshakeResponse
                         depth.Visuals = MemoryMarshal.Cast<byte, Visual>(bufferSlice).ToArray();
                         readingIndex += visualSize;
                         
+                    
                         Depths[i] = depth;
                     }
 
-                    ArrayPool<byte>.Shared.Return(buffer);
                 }
                 break;
             default:

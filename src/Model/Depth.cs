@@ -27,7 +27,6 @@ public class Depth
             DepthValue = depth.DepthValue,
             Visuals = new Visual[depth.VisualsLength]
         };
-        System.Console.WriteLine(depth.VisualsLength);
         return dept;
     }
 }

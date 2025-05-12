@@ -21,9 +21,8 @@ public struct Screen
     public ushort MinMaps; // min colormaps
     public ushort MaxMaps; // max colormaps
     public uint RootVisualId; // Visual*
-    public BackingStores BackingStore; // enum: Never, WhenMapped, Always
+    public BackingStores BackingStore;
     public byte SaveUnders; // Bool (0 or non-zero)
     public byte RootDepth; // bits per pixel
-    public byte NDepths; // number of supported depths
-    public byte NumberOfDepth;
+    public byte NumberOfDepth; // number of supported depths
 }
