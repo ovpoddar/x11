@@ -10,4 +10,5 @@ public struct HandshakeResponseHeadSuccess
     public short MajorVersion;
     public short MinorVersion;
     public short AdditionalDataLength;
+    // think about storing string with getter.
 }

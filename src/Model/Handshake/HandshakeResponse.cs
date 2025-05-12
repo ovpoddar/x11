@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -17,6 +18,8 @@ public struct HandshakeResponse
     public string? VendorName { get; private set; }
     public HandshakeResponseSuccessBody HandshakeResponseSuccessBody;
     public Format[]? Formats;
+    public Screen? Screen;
+    public Depth[]? Depths;
     public HandshakeResponse(Stream stream)
     {
         Span<byte> scratchBuffer = stackalloc byte[8];
@@ -66,6 +69,20 @@ public struct HandshakeResponse
                         stream.ReadExactly(format);
                         Formats = MemoryMarshal.Cast<byte, Format>(format).ToArray();
                         readingIndex += format.Length;
+                    }
+                    {
+                        Span<byte> screen = stackalloc byte[41];
+                        stream.ReadExactly(screen);
+                        Screen = Unsafe.As<byte, Screen>(ref screen[0]);
+                        Depths = new Depth[Screen.Value.NDepths];
+                        for (int i = 0; i < Depths.Length; i++)
+                        {
+                            var dept = ArrayPool<byte>.Shared.Rent(8);
+                            stream.ReadExactly(dept, 0, 8);
+                            Depths[i] = Unsafe.As<byte, Depth>(ref dept[0]);
+                            // todo: fill the rest.
+
+                        }
                     }
                     
                 }

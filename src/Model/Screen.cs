@@ -6,25 +6,24 @@ using System.Threading.Tasks;
 
 namespace src.Model;
 
-[StructLayout(LayoutKind.Sequential)]
-public unsafe struct Screen
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public struct Screen
 {
-    public ulong Root; // Window (XID, usually ulong)
-    public int Width; // screen width in pixels
-    public int Height; // screen height in pixels
-    public int MWidth; // width in millimeters
-    public int MHeight; // height in millimeters
-    public int NDepths; // number of supported depths
-    public Depth* Depths; // Depth* (list of depths)
-    public int RootDepth; // bits per pixel
-    public Visual* RootVisual; // Visual*
-    public ulong DefaultGC; // GC (Graphics Context)
-    public ulong CMap; // Colormap
-    public ulong WhitePixel; // pixel value for white
-    public ulong BlackPixel; // pixel value for black
-    public int MaxMaps; // max colormaps
-    public int MinMaps; // min colormaps
-    public int BackingStore; // enum: Never, WhenMapped, Always
-    public int SaveUnders; // Bool (0 or non-zero)
-    public long RootInputMask; // input event mask
+    public uint Root; // Window (XID, usually ulong)
+    public uint CMap; // Colormap
+    public uint WhitePixel; // pixel value for white
+    public uint BlackPixel; // pixel value for black
+    public int InputMask; // event mask
+    public ushort Width; // screen width in pixels
+    public ushort Height; // screen height in pixels
+    public ushort MWidth; // width in millimeters
+    public ushort MHeight; // height in millimeters
+    public ushort MinMaps; // min colormaps
+    public ushort MaxMaps; // max colormaps
+    public uint RootVisualId; // Visual*
+    public BackingStores BackingStore; // enum: Never, WhenMapped, Always
+    public byte SaveUnders; // Bool (0 or non-zero)
+    public byte RootDepth; // bits per pixel
+    public byte NDepths; // number of supported depths
+    public byte NumberOfDepth;
 }
