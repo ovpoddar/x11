@@ -7,10 +7,27 @@ using System.Threading.Tasks;
 namespace src.Model;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct Depth
+public struct _Depth
 {
     public byte DepthValue;
     public byte Pad0;
-    public ushort VisualsLength;
+    public short VisualsLength;
     public int Pad1;
+}
+
+public class Depth
+{
+    public byte DepthValue;
+    public required Visual[] Visuals;
+
+    public static implicit operator Depth(_Depth depth)
+    {
+        var dept = new Depth()
+        {
+            DepthValue = depth.DepthValue,
+            Visuals = new Visual[depth.VisualsLength]
+        };
+        System.Console.WriteLine(depth.VisualsLength);
+        return dept;
+    }
 }

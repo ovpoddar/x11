@@ -25,4 +25,7 @@ soc.Connect(new UnixDomainSocketEndPoint(connectionSocket));
 if (!soc.Connected) return;
 
 using var connection = new NetworkStream(soc);
-HandshakeHandler.MakeHandshake(connection);
+var result = HandshakeHandler.MakeHandshake(connection);
+
+
+Console.WriteLine();

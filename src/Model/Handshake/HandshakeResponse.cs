@@ -53,47 +53,51 @@ public struct HandshakeResponse
 
             case HandshakeStatus.Success:
                 {
-                    {
-                        Span<byte> reason = stackalloc byte[32];
-                        stream.ReadExactly(reason);
-                        // this is a copy not a ref.
-                        HandshakeResponseSuccessBody = Unsafe.As<byte, HandshakeResponseSuccessBody>(ref scratchBuffer[0]);
-                    }
-                    var totalExtraData = responseHead.HandshakeResponseHeadSuccess.AdditionalDataLength - 32;
+                    var totalExtraData = responseHead.HandshakeResponseHeadSuccess.AdditionalDataLength;
+                    var buffer = ArrayPool<byte>.Shared.Rent(totalExtraData);
+                    stream.ReadExactly(buffer, 0, totalExtraData);
                     var readingIndex = 0;
-                    {
-                        Span<byte> vendor = stackalloc byte[AddPadding(HandshakeResponseSuccessBody.VendorLength)];
-                        stream.ReadExactly(vendor);
-                        VendorName = Encoding.ASCII.GetString(vendor[..HandshakeResponseSuccessBody.VendorLength]);
-                        readingIndex += vendor.Length;
-                    }
-                    {
-                        Span<byte> format = stackalloc byte[HandshakeResponseSuccessBody.FormatsNumber * 8];
-                        stream.ReadExactly(format);
-                        Formats = MemoryMarshal.Cast<byte, Format>(format).ToArray();
-                        readingIndex += format.Length;
-                    }
-                    {
-                        Span<byte> screen = stackalloc byte[41];
-                        stream.ReadExactly(screen);
-                        Screen = Unsafe.As<byte, Screen>(ref screen[0]);
-                        Depths = new Depth[Screen.Value.NDepths];
-                        for (int i = 0; i < Depths.Length; i++)
-                        {
-                            var dept = ArrayPool<byte>.Shared.Rent(8);
-                            stream.ReadExactly(dept, 0, 8);
-                            Depths[i] = Unsafe.As<byte, Depth>(ref dept[0]);
-                            // todo: fill the rest.
+                    var bufferSlice = buffer.AsSpan(readingIndex, Marshal.SizeOf<HandshakeResponseSuccessBody>());
 
-                        }
+                    HandshakeResponseSuccessBody = Unsafe.As<byte, HandshakeResponseSuccessBody>(ref bufferSlice[0]);
+                    readingIndex += Marshal.SizeOf<HandshakeResponseSuccessBody>();
+
+                    bufferSlice = buffer.AsSpan(readingIndex, HandshakeResponseSuccessBody.VendorLength);
+                    VendorName = Encoding.ASCII.GetString(bufferSlice);
+                    readingIndex += AddPadding(bufferSlice.Length);
+
+                    bufferSlice = buffer.AsSpan(readingIndex, HandshakeResponseSuccessBody.FormatsNumber * 8);
+                    Formats = MemoryMarshal.Cast<byte, Format>(bufferSlice).ToArray();
+                    readingIndex += bufferSlice.Length;
+
+                    bufferSlice = buffer.AsSpan(readingIndex, Marshal.SizeOf<Screen>());
+                    Screen = Unsafe.As<byte, Screen>(ref bufferSlice[0]);
+                    readingIndex += Marshal.SizeOf<Screen>();
+
+                    Depths = new Depth[Screen.Value.NumberOfDepth];
+                    for (int i = 0; i < Depths.Length; i++)
+                    {
+                        bufferSlice = buffer.AsSpan(readingIndex, Marshal.SizeOf<_Depth>());
+                        Depth depth = Unsafe.As<byte, _Depth>(ref bufferSlice[0]);
+                        readingIndex += Marshal.SizeOf<_Depth>();
+
+                        var visualSize = depth.Visuals.Length * Marshal.SizeOf<Visual>();
+                        bufferSlice = buffer.AsSpan(readingIndex, visualSize);                        
+                        depth.Visuals = MemoryMarshal.Cast<byte, Visual>(bufferSlice).ToArray();
+                        readingIndex += visualSize;
+                        
+                        Depths[i] = depth;
                     }
-                    
+
+                    ArrayPool<byte>.Shared.Return(buffer);
                 }
                 break;
             default:
                 break;
         }
     }
+
+
 
     private static int AddPadding(int pad) =>
         pad + ((4 - (pad & 3)) & 3);

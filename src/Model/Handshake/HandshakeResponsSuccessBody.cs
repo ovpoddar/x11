@@ -10,16 +10,16 @@ namespace src.Model.Handshake;
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct HandshakeResponseSuccessBody
 {
-    public int ReleaseNumber { get; set; }
-    public int ResourceIDBase { get; set; }
-    public int ResourceIDMask { get; set; }
-    public int MotionBufferSize { get; set; }
+    public uint ReleaseNumber { get; set; }
+    public uint ResourceIDBase { get; set; }
+    public uint ResourceIDMask { get; set; }
+    public uint MotionBufferSize { get; set; }
     public short VendorLength { get; set; }
-    public short MaxRequestLength { get; set; }
+    public ushort MaxRequestLength { get; set; }
     public byte ScreensNumber { get; set; }
     public byte FormatsNumber { get; set; }
-    public byte ImageByteOrder { get; set; }
-    public byte BitmapBitOrder { get; set; }
+    public ImageOrder ImageByteOrder { get; set; }
+    public BitOrder BitmapBitOrder { get; set; }
     public byte BitmapScanLineUnit { get; set; }
     public byte BitmapScanLinePad { get; set; }
     public byte MinKeyCode { get; set; }
