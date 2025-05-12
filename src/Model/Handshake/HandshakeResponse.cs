@@ -28,9 +28,6 @@ public struct HandshakeResponse
         // same not another allocation can be achieve by MemoryMarshal.Cast
         // which may do a heap alloc struct (or may runtime put it in stack)
         // but it will ref to the struct. sharing same memory.
-        // todo: want to change how its get processed.
-        // for starter not doing another read for the string message.
-        // test it before process
         ref var responseHead = ref Unsafe.As<byte, HandshakeResponseHead>(ref scratchBuffer[0]);
         HandshakeStatus = responseHead.HandshakeStatus;
         switch (responseHead.HandshakeStatus)
@@ -53,6 +50,8 @@ public struct HandshakeResponse
 
             case HandshakeStatus.Success:
                 {
+                    // todo: Visual size is off by a lot might made a mistake while parsing
+                    // need to find the bug.
                     var totalExtraData = responseHead.HandshakeResponseHeadSuccess.AdditionalDataLength;
                     var buffer = ArrayPool<byte>.Shared.Rent(totalExtraData);
                     stream.ReadExactly(buffer, 0, totalExtraData);
