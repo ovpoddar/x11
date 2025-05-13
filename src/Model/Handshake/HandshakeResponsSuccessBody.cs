@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace src.Model.Handshake;
@@ -25,4 +26,19 @@ public struct HandshakeResponseSuccessBody
     public byte MinKeyCode { get; set; }
     public byte MaxKeyCode { get; set; }
     public int Padding { get; set; }
+    private byte _vendorName;
+    public string VendorName
+    {
+        get
+        {
+            unsafe
+            {
+                fixed (byte* f = &_vendorName)
+                {
+                    return Encoding.ASCII.GetString(f, this.VendorLength);
+                }
+
+            }
+        }
+    }
 }

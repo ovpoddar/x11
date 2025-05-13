@@ -40,12 +40,12 @@ var window = result.HandshakeResponseSuccessBody.ResourceIDBase + (x << shift);
 Span<byte> createWindowRequest = stackalloc byte[32];
 var writeIndex = 0;
 createWindowRequest[writeIndex++] = 1;
-createWindowRequest[writeIndex++] = result.Screen.Value.RootDepth;
+createWindowRequest[writeIndex++] = result.Screen[0].RootDepth;
 MemoryMarshal.Write<ushort>(createWindowRequest[writeIndex..], 8 + 1); // 8 + 
 writeIndex += 2;
 MemoryMarshal.Write<uint>(createWindowRequest[writeIndex..], (uint)window);// do something else
 writeIndex += 4;
-MemoryMarshal.Write<uint>(createWindowRequest[writeIndex..], result.Screen.Value.Root);
+MemoryMarshal.Write<uint>(createWindowRequest[writeIndex..], result.Screen[0].Root);
 writeIndex += 4;
 MemoryMarshal.Write<ushort>(createWindowRequest[writeIndex..], 0); // x
 writeIndex += 2;
@@ -59,7 +59,7 @@ MemoryMarshal.Write<ushort>(createWindowRequest[writeIndex..], 0); // border wid
 writeIndex += 2;
 MemoryMarshal.Write<ushort>(createWindowRequest[writeIndex..], 0); // class
 writeIndex += 2;
-MemoryMarshal.Write<uint>(createWindowRequest[writeIndex..], result.Screen.Value.RootVisualId); // visual id
+MemoryMarshal.Write<uint>(createWindowRequest[writeIndex..], result.Screen[0].RootVisualId); // visual id
 writeIndex += 4;
 MemoryMarshal.Write<int>(createWindowRequest[writeIndex..], (int)ValueMask.EventMask); // value-mask
 writeIndex += 4;

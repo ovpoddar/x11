@@ -11,7 +11,7 @@ public struct _Depth
 {
     public byte DepthValue;
     public byte Pad0;
-    public short VisualsLength;
+    public ushort VisualsLength;
     public int Pad1;
 }
 

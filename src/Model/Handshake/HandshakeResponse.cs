@@ -1,6 +1,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net.Sockets;
@@ -19,8 +20,7 @@ public struct HandshakeResponse
     public string? VendorName { get; private set; }
     public HandshakeResponseSuccessBody HandshakeResponseSuccessBody;
     public Format[]? Formats;
-    public Screen? Screen;
-    public Depth[]? Depths;
+    public Screen[]? Screen;
     public HandshakeResponse(Socket stream)
     {
         Span<byte> scratchBuffer = stackalloc byte[8];
@@ -54,41 +54,42 @@ public struct HandshakeResponse
                     var totalExtraData = responseHead.HandshakeResponseHeadSuccess.AdditionalDataLength;
                     var buffer = ArrayPool<byte>.Shared.Rent(totalExtraData);
                     stream.Receive(buffer, 0, totalExtraData, SocketFlags.None);
+
                     var readingIndex = 0;
                     var bufferSlice = buffer.AsSpan(readingIndex, Marshal.SizeOf<HandshakeResponseSuccessBody>());
-
-                    HandshakeResponseSuccessBody = Unsafe.As<byte, HandshakeResponseSuccessBody>(ref bufferSlice[0]);
+                    // this is tie ti the buffer. which is a ref no new allocation just as cast
+                    // do not send any were else with ref.
+                    ref var handshakeResponseSuccessBody = ref Unsafe.As<byte, HandshakeResponseSuccessBody>(ref bufferSlice[0]);
                     readingIndex += Marshal.SizeOf<HandshakeResponseSuccessBody>();
 
-                    bufferSlice = buffer.AsSpan(readingIndex, HandshakeResponseSuccessBody.VendorLength);
-                    VendorName = Encoding.ASCII.GetString(bufferSlice);
-                    readingIndex += AddPadding(bufferSlice.Length);
+                    VendorName = handshakeResponseSuccessBody.VendorName;
+                    readingIndex += AddPadding(handshakeResponseSuccessBody.VendorLength);
 
-                    bufferSlice = buffer.AsSpan(readingIndex, HandshakeResponseSuccessBody.FormatsNumber * 8);
+                    bufferSlice = buffer.AsSpan(readingIndex, handshakeResponseSuccessBody.FormatsNumber * Marshal.SizeOf<Format>());
                     Formats = MemoryMarshal.Cast<byte, Format>(bufferSlice).ToArray();
                     readingIndex += bufferSlice.Length;
 
-                    bufferSlice = buffer.AsSpan(readingIndex, Marshal.SizeOf<Screen>());
-                    Screen = Unsafe.As<byte, Screen>(ref bufferSlice[0]);
-                    readingIndex += bufferSlice.Length;
-
-                    Depths = new Depth[Screen.Value.NumberOfDepth];
-
-
-                    for (int i = 0; i < Depths.Length; i++)
+                    Screen = new Screen[handshakeResponseSuccessBody.ScreensNumber];
+                    for (var i = 0; i < Screen.Length; i++)
                     {
-                        bufferSlice = buffer.AsSpan(readingIndex, Marshal.SizeOf<_Depth>());
-                        Depth depth = Unsafe.As<byte, _Depth>(ref bufferSlice[0]);
+                        bufferSlice = buffer.AsSpan(readingIndex, Marshal.SizeOf<_Screen>());
+                        Screen screen = Unsafe.As<byte, _Screen>(ref bufferSlice[0]);
                         readingIndex += bufferSlice.Length;
+                        for (var j = 0; j < screen.Depths.Length; j++)
+                        {
+                            bufferSlice = buffer.AsSpan(readingIndex, Marshal.SizeOf<_Depth>());
+                            Depth depth = Unsafe.As<byte, _Depth>(ref bufferSlice[0]);
+                            readingIndex += bufferSlice.Length;
 
-                        var visualSize = depth.Visuals.Length * Marshal.SizeOf<Visual>();
-                        bufferSlice = buffer.AsSpan(readingIndex, visualSize);
-                        depth.Visuals = MemoryMarshal.Cast<byte, Visual>(bufferSlice).ToArray();
-                        readingIndex += visualSize;
+                            bufferSlice = buffer.AsSpan(readingIndex, depth.Visuals.Length * Marshal.SizeOf<Visual>());
+                            depth.Visuals = MemoryMarshal.Cast<byte, Visual>(bufferSlice).ToArray();
+                            readingIndex += bufferSlice.Length;
 
-
-                        Depths[i] = depth;
+                            screen.Depths[j] = depth;
+                        }
+                        Screen[i] = screen;
                     }
+                    HandshakeResponseSuccessBody = handshakeResponseSuccessBody;
                     ArrayPool<byte>.Shared.Return(buffer);
                 }
                 break;
@@ -97,7 +98,8 @@ public struct HandshakeResponse
         }
     }
 
-
+    private static int Padding(int pad) =>
+        ((4 - (pad & 3)) & 3);
 
     private static int AddPadding(int pad) =>
         pad + ((4 - (pad & 3)) & 3);
