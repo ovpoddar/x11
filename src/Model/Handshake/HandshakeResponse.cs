@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -20,10 +21,10 @@ public struct HandshakeResponse
     public Format[]? Formats;
     public Screen? Screen;
     public Depth[]? Depths;
-    public HandshakeResponse(Stream stream)
+    public HandshakeResponse(Socket stream)
     {
         Span<byte> scratchBuffer = stackalloc byte[8];
-        stream.ReadExactly(scratchBuffer);
+        stream.Receive(scratchBuffer);
         // todo: does not support in lower dotnet
         // same not another allocation can be achieve by MemoryMarshal.Cast
         // which may do a heap alloc struct (or may runtime put it in stack)
@@ -35,7 +36,7 @@ public struct HandshakeResponse
             case HandshakeStatus.Failed:
                 {
                     Span<byte> reason = stackalloc byte[responseHead.HandshakeResponseHeadFailed.AdditionalDataLength * 4];
-                    stream.ReadExactly(reason);
+                    stream.Receive(reason);
                     StatusMessage = Encoding.ASCII.GetString(reason).TrimEnd();
                     break;
                 }
@@ -43,7 +44,7 @@ public struct HandshakeResponse
             case HandshakeStatus.Authenticate:
                 {
                     Span<byte> reason = stackalloc byte[responseHead.HandshakeResponseHeadAuthenticate.AdditionalDataLength * 4];
-                    stream.ReadExactly(reason);
+                    stream.Receive(reason);
                     StatusMessage = Encoding.ASCII.GetString(reason).TrimEnd();
                     break;
                 }
@@ -52,7 +53,7 @@ public struct HandshakeResponse
                 {
                     var totalExtraData = responseHead.HandshakeResponseHeadSuccess.AdditionalDataLength;
                     var buffer = ArrayPool<byte>.Shared.Rent(totalExtraData);
-                    stream.ReadExactly(buffer, 0, totalExtraData);
+                    stream.Receive(buffer, 0, totalExtraData, SocketFlags.None);
                     var readingIndex = 0;
                     var bufferSlice = buffer.AsSpan(readingIndex, Marshal.SizeOf<HandshakeResponseSuccessBody>());
 
@@ -69,28 +70,26 @@ public struct HandshakeResponse
 
                     bufferSlice = buffer.AsSpan(readingIndex, Marshal.SizeOf<Screen>());
                     Screen = Unsafe.As<byte, Screen>(ref bufferSlice[0]);
-                    readingIndex += Marshal.SizeOf<Screen>();
+                    readingIndex += bufferSlice.Length;
 
                     Depths = new Depth[Screen.Value.NumberOfDepth];
-                    ArrayPool<byte>.Shared.Return(buffer);
-                    // todo: Visual size is off by a lot might made a mistake while parsing
-                    // need to find the bug.
-                    return;
+
+
                     for (int i = 0; i < Depths.Length; i++)
                     {
                         bufferSlice = buffer.AsSpan(readingIndex, Marshal.SizeOf<_Depth>());
                         Depth depth = Unsafe.As<byte, _Depth>(ref bufferSlice[0]);
-                        readingIndex += Marshal.SizeOf<_Depth>();
+                        readingIndex += bufferSlice.Length;
 
                         var visualSize = depth.Visuals.Length * Marshal.SizeOf<Visual>();
-                        bufferSlice = buffer.AsSpan(readingIndex, visualSize);                        
+                        bufferSlice = buffer.AsSpan(readingIndex, visualSize);
                         depth.Visuals = MemoryMarshal.Cast<byte, Visual>(bufferSlice).ToArray();
                         readingIndex += visualSize;
-                        
-                    
+
+
                         Depths[i] = depth;
                     }
-
+                    ArrayPool<byte>.Shared.Return(buffer);
                 }
                 break;
             default:

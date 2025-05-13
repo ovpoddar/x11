@@ -1,3 +1,4 @@
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
 using src.Model.Handshake;
@@ -7,13 +8,13 @@ namespace src.Handler;
 
 public static class HandshakeHandler
 {
-    public static HandshakeResponse MakeHandshake(Stream stream)
+    public static HandshakeResponse MakeHandshake(Socket stream)
     {
         MakeCall(stream);
         return new HandshakeResponse(stream);
     }
 
-    static void MakeCall(Stream stream)
+    static void MakeCall(Socket stream)
     {
         var (authName, authData) = Helper.GetAuthInfo();
         var namePaddedLength = AddPadding(authName.Length);
@@ -39,7 +40,7 @@ public static class HandshakeHandler
         writingIndex += namePaddedLength;
         Encoding.ASCII.GetBytes(authData, scratchBuffer[writingIndex..]);
         writingIndex += authData.Length;
-        stream.Write(scratchBuffer);
+        stream.Send(scratchBuffer);
     }
 
     private static int AddPadding(int pad) =>
