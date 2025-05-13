@@ -17,4 +17,5 @@ public unsafe struct Visual
     public uint RedMask;
     public uint GreenMask;
     public uint BlueMask; /* mask values */
+    public int Pad0;
 }

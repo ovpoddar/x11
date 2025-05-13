@@ -60,7 +60,8 @@ public struct HandshakeResponse
                     // this is tie ti the buffer. which is a ref no new allocation just as cast
                     // do not send any were else with ref.
                     ref var handshakeResponseSuccessBody = ref Unsafe.As<byte, HandshakeResponseSuccessBody>(ref bufferSlice[0]);
-                    readingIndex += Marshal.SizeOf<HandshakeResponseSuccessBody>();
+                    // -1  to account the string's first character
+                    readingIndex += (bufferSlice.Length - 1);
 
                     VendorName = handshakeResponseSuccessBody.VendorName;
                     readingIndex += AddPadding(handshakeResponseSuccessBody.VendorLength);
@@ -75,18 +76,7 @@ public struct HandshakeResponse
                         bufferSlice = buffer.AsSpan(readingIndex, Marshal.SizeOf<_Screen>());
                         Screen screen = Unsafe.As<byte, _Screen>(ref bufferSlice[0]);
                         readingIndex += bufferSlice.Length;
-                        for (var j = 0; j < screen.Depths.Length; j++)
-                        {
-                            bufferSlice = buffer.AsSpan(readingIndex, Marshal.SizeOf<_Depth>());
-                            Depth depth = Unsafe.As<byte, _Depth>(ref bufferSlice[0]);
-                            readingIndex += bufferSlice.Length;
-
-                            bufferSlice = buffer.AsSpan(readingIndex, depth.Visuals.Length * Marshal.SizeOf<Visual>());
-                            depth.Visuals = MemoryMarshal.Cast<byte, Visual>(bufferSlice).ToArray();
-                            readingIndex += bufferSlice.Length;
-
-                            screen.Depths[j] = depth;
-                        }
+                        readingIndex += screen.FillTheDepth(buffer.AsSpan(readingIndex..));
                         Screen[i] = screen;
                     }
                     HandshakeResponseSuccessBody = handshakeResponseSuccessBody;
