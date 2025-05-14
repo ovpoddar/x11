@@ -1,10 +1,13 @@
-﻿using System.Buffers;
+﻿using System;
+using System.Buffers;
+using System.Buffers.Binary;
 using System.IO;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using src.Handler;
 using src.Model;
 using X11cs;
+using X11cs.Model;
 
 
 var display = Environment.GetEnvironmentVariable("DISPLAY") ?? ":0";
@@ -31,57 +34,56 @@ var result = HandshakeHandler.MakeHandshake(soc);
 
 var window = IdHandler.GetId(result.HandshakeResponseSuccessBody);
 
+if (result.Screen == null || result.Screen.Length == 0)
+    return;
 
 // create window
-var createWindowRequest = new List<byte>
-{
-    1,                                                          // opcode
-    result.Screen[0].RootDepth,                                 // depth
-    8+1,                                                        // request length
-    0,
-};
-createWindowRequest.AddRange(BitConverter.GetBytes(window));    // window
-createWindowRequest.AddRange(BitConverter.GetBytes(result.Screen[0].Root)); // parent
-createWindowRequest.AddRange([0, 0]); // x
-createWindowRequest.AddRange([0, 0]); // y
-createWindowRequest.AddRange([244, 1]); // width
-createWindowRequest.AddRange([244, 1]); // height
-createWindowRequest.AddRange([1, 0]); // border width
-createWindowRequest.AddRange([0, 0]); // class
-createWindowRequest.AddRange(BitConverter.GetBytes(result.Screen[0].RootVisualId)); // class
-createWindowRequest.AddRange(BitConverter.GetBytes((int)(ValueMask.WinGravity | ValueMask.BackgroundPixel))); // value-mask
-createWindowRequest.AddRange(BitConverter.GetBytes(0xff000000)); // value-mask
-createWindowRequest.AddRange(BitConverter.GetBytes((int)(EventMask.ExposureMask | EventMask.KeyPressMask))); // value-mask
-soc.Send(createWindowRequest.ToArray());
+Span<byte> createWindowRequest = stackalloc byte[40];
+createWindowRequest[0] = 1;
+createWindowRequest[1] = 0;
+MemoryMarshal.Write<ushort>(createWindowRequest[2..4], 10);
+MemoryMarshal.Write(createWindowRequest[4..8], window);
+MemoryMarshal.Write(createWindowRequest[8..12], result.Screen[0].Root);
+MemoryMarshal.Write(createWindowRequest[12..14], (short)0);                // x
+MemoryMarshal.Write(createWindowRequest[14..16], (short)0);                // y
+MemoryMarshal.Write(createWindowRequest[16..18], (ushort)500);             // width
+MemoryMarshal.Write(createWindowRequest[18..20], (ushort)500);             // height
+// 20..22               // border width
+MemoryMarshal.Write(createWindowRequest[22..24], (ushort)1);               // class: InputOutput
+MemoryMarshal.Write(createWindowRequest[24..28], result.Screen[0].RootVisualId);     // visual
+MemoryMarshal.Write(createWindowRequest[28..32], (uint)(ValueMask.BackgroundPixel | ValueMask.EventMask));
+MemoryMarshal.Write(createWindowRequest[32..36], 0xff000000); // BackgroundPixel (e.g., white)
+MemoryMarshal.Write(createWindowRequest[36..40], (uint)(EventMask.ExposureMask | EventMask.KeyPressMask));
+soc.Send(createWindowRequest);
 
 // map window
 Span<byte> mapWindow = stackalloc byte[8];
-mapWindow[0] = 9;
+mapWindow[0] = 8;
 MemoryMarshal.Write<ushort>(mapWindow[2..], 2);
 MemoryMarshal.Write<int>(mapWindow[4..], window);
 soc.Send(mapWindow);
 
 var isRunning = true;
-
 while (isRunning)
 {
     var rent = ArrayPool<byte>.Shared.Rent(1024 * 2); // should not be more than event size assuming.
-
-    var totalRead = await soc.ReceiveAsync(rent);
-    Console.WriteLine($"received event. {totalRead}");
-    if (rent[0] == 0)
+    if (soc.Poll(-1, SelectMode.SelectRead))
     {
-        System.Console.WriteLine();
-    }
-    else if (rent[0] == 1)
-    {
-        System.Console.WriteLine("got reply");
-    }
-    else
-    {
-        System.Console.WriteLine($"event {rent[0]}");
+        var totalRead = soc.Receive(rent);
+        if (rent[0] == 0 || rent[0] == 1 || totalRead == 0)
+        {
+            Console.WriteLine("Some thing gone wrong check the code.");
+            if (soc.Connected)
+                soc.Disconnect(true);
+            isRunning = false;
+        }
+        else
+        {
+            Console.WriteLine($"received event. {totalRead}");
+            var evnt = (Event)rent[0];
+            Console.WriteLine($"event {evnt}");
+        }
     }
     ArrayPool<byte>.Shared.Return(rent);
-
 }
 Console.WriteLine();

@@ -51,9 +51,16 @@ public struct HandshakeResponse
 
             case HandshakeStatus.Success:
                 {
-                    var totalExtraData = responseHead.HandshakeResponseHeadSuccess.AdditionalDataLength;
+                    var totalExtraData = responseHead.HandshakeResponseHeadSuccess.AdditionalDataLength * 4;
                     var buffer = ArrayPool<byte>.Shared.Rent(totalExtraData);
-                    var totalRead = stream.Receive(buffer, 0, totalExtraData, SocketFlags.None);
+                    var totalRead = 0;
+                    while (true)
+                    {
+                        totalRead += stream.Receive(buffer, totalRead, (totalExtraData - totalRead), SocketFlags.None);
+                        if (totalRead == totalExtraData)
+                            break;
+                    }
+
 
                     var readingIndex = 0;
                     var bufferSlice = buffer.AsSpan(readingIndex, Marshal.SizeOf<HandshakeResponseSuccessBody>());
@@ -76,21 +83,11 @@ public struct HandshakeResponse
                         bufferSlice = buffer.AsSpan(readingIndex, Marshal.SizeOf<_Screen>());
                         Screen screen = Unsafe.As<byte, _Screen>(ref bufferSlice[0]);
                         readingIndex += bufferSlice.Length;
-                        readingIndex += screen.FillTheDepth(buffer.AsSpan(readingIndex..), stream);
+                        readingIndex += screen.FillTheDepth(buffer.AsSpan(readingIndex..));
                         Screen[i] = screen;
                     }
                     HandshakeResponseSuccessBody = handshakeResponseSuccessBody;
                     ArrayPool<byte>.Shared.Return(buffer);
-
-                    var readMore = (totalExtraData * 4) - totalRead;
-                    var reamining = ArrayPool<byte>.Shared.Rent(readMore);
-                    var read = 0;
-                    while (true)
-                    {
-                        read += stream.Receive(reamining);
-                        if (read == readMore)
-                            break;
-                    }
                 }
                 break;
             default:

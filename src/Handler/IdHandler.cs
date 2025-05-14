@@ -11,9 +11,9 @@ namespace src.Handler
         private static int _globalId = 0;
         public static int GetId(HandshakeResponseSuccessBody handshakeResponseSuccess)
         {
-            var result = (handshakeResponseSuccess.ResourceIDMask & _globalId) | handshakeResponseSuccess.ResourceIDBase;
+            var result = (int)((handshakeResponseSuccess.ResourceIDMask & _globalId) | handshakeResponseSuccess.ResourceIDBase);
             _globalId += 1;
-            return (int)result;
+            return result;
         }
     }
 }
