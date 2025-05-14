@@ -53,7 +53,7 @@ public struct HandshakeResponse
                 {
                     var totalExtraData = responseHead.HandshakeResponseHeadSuccess.AdditionalDataLength;
                     var buffer = ArrayPool<byte>.Shared.Rent(totalExtraData);
-                    stream.Receive(buffer, 0, totalExtraData, SocketFlags.None);
+                    var totalRead = stream.Receive(buffer, 0, totalExtraData, SocketFlags.None);
 
                     var readingIndex = 0;
                     var bufferSlice = buffer.AsSpan(readingIndex, Marshal.SizeOf<HandshakeResponseSuccessBody>());
@@ -61,7 +61,7 @@ public struct HandshakeResponse
                     // do not send any were else with ref.
                     ref var handshakeResponseSuccessBody = ref Unsafe.As<byte, HandshakeResponseSuccessBody>(ref bufferSlice[0]);
                     // -1  to account the string's first character
-                    readingIndex += (bufferSlice.Length - 1);
+                    readingIndex += bufferSlice.Length - 1;
 
                     VendorName = handshakeResponseSuccessBody.VendorName;
                     readingIndex += AddPadding(handshakeResponseSuccessBody.VendorLength);
@@ -76,11 +76,21 @@ public struct HandshakeResponse
                         bufferSlice = buffer.AsSpan(readingIndex, Marshal.SizeOf<_Screen>());
                         Screen screen = Unsafe.As<byte, _Screen>(ref bufferSlice[0]);
                         readingIndex += bufferSlice.Length;
-                        readingIndex += screen.FillTheDepth(buffer.AsSpan(readingIndex..));
+                        readingIndex += screen.FillTheDepth(buffer.AsSpan(readingIndex..), stream);
                         Screen[i] = screen;
                     }
                     HandshakeResponseSuccessBody = handshakeResponseSuccessBody;
                     ArrayPool<byte>.Shared.Return(buffer);
+
+                    var readMore = (totalExtraData * 4) - totalRead;
+                    var reamining = ArrayPool<byte>.Shared.Rent(readMore);
+                    var read = 0;
+                    while (true)
+                    {
+                        read += stream.Receive(reamining);
+                        if (read == readMore)
+                            break;
+                    }
                 }
                 break;
             default:

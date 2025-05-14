@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Buffers;
+using System.IO;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using src.Handler;
@@ -28,43 +29,59 @@ if (!soc.Connected) return;
 // handshake done
 var result = HandshakeHandler.MakeHandshake(soc);
 
-var shift = 0;
-var x = 0;
-while (((result.HandshakeResponseSuccessBody.ResourceIDMask >> shift) & 1) != 0)
-    shift++;
-
-var window = result.HandshakeResponseSuccessBody.ResourceIDBase + (x << shift);
+var window = IdHandler.GetId(result.HandshakeResponseSuccessBody);
 
 
 // create window
-Span<byte> createWindowRequest = stackalloc byte[32];
-var writeIndex = 0;
-createWindowRequest[writeIndex++] = 1;
-createWindowRequest[writeIndex++] = result.Screen[0].RootDepth;
-MemoryMarshal.Write<ushort>(createWindowRequest[writeIndex..], 8 + 1); // 8 + 
-writeIndex += 2;
-MemoryMarshal.Write<uint>(createWindowRequest[writeIndex..], (uint)window);// do something else
-writeIndex += 4;
-MemoryMarshal.Write<uint>(createWindowRequest[writeIndex..], result.Screen[0].Root);
-writeIndex += 4;
-MemoryMarshal.Write<ushort>(createWindowRequest[writeIndex..], 0); // x
-writeIndex += 2;
-MemoryMarshal.Write<ushort>(createWindowRequest[writeIndex..], 0); // y
-writeIndex += 2;
-MemoryMarshal.Write<ushort>(createWindowRequest[writeIndex..], 500); //width
-writeIndex += 2;
-MemoryMarshal.Write<ushort>(createWindowRequest[writeIndex..], 500); //height
-writeIndex += 2;
-MemoryMarshal.Write<ushort>(createWindowRequest[writeIndex..], 0); // border width
-writeIndex += 2;
-MemoryMarshal.Write<ushort>(createWindowRequest[writeIndex..], 0); // class
-writeIndex += 2;
-MemoryMarshal.Write<uint>(createWindowRequest[writeIndex..], result.Screen[0].RootVisualId); // visual id
-writeIndex += 4;
-MemoryMarshal.Write<int>(createWindowRequest[writeIndex..], (int)ValueMask.EventMask); // value-mask
-writeIndex += 4;
-MemoryMarshal.Write<int>(createWindowRequest[writeIndex..], (int)(EventMask.PointerMotionMask | EventMask.ExposureMask)); // value-mask
-writeIndex += 4;
-soc.Send(createWindowRequest);
+var createWindowRequest = new List<byte>
+{
+    1,                                                          // opcode
+    result.Screen[0].RootDepth,                                 // depth
+    8+1,                                                        // request length
+    0,
+};
+createWindowRequest.AddRange(BitConverter.GetBytes(window));    // window
+createWindowRequest.AddRange(BitConverter.GetBytes(result.Screen[0].Root)); // parent
+createWindowRequest.AddRange([0, 0]); // x
+createWindowRequest.AddRange([0, 0]); // y
+createWindowRequest.AddRange([244, 1]); // width
+createWindowRequest.AddRange([244, 1]); // height
+createWindowRequest.AddRange([1, 0]); // border width
+createWindowRequest.AddRange([0, 0]); // class
+createWindowRequest.AddRange(BitConverter.GetBytes(result.Screen[0].RootVisualId)); // class
+createWindowRequest.AddRange(BitConverter.GetBytes((int)(ValueMask.WinGravity | ValueMask.BackgroundPixel))); // value-mask
+createWindowRequest.AddRange(BitConverter.GetBytes(0xff000000)); // value-mask
+createWindowRequest.AddRange(BitConverter.GetBytes((int)(EventMask.ExposureMask | EventMask.KeyPressMask))); // value-mask
+soc.Send(createWindowRequest.ToArray());
 
+// map window
+Span<byte> mapWindow = stackalloc byte[8];
+mapWindow[0] = 9;
+MemoryMarshal.Write<ushort>(mapWindow[2..], 2);
+MemoryMarshal.Write<int>(mapWindow[4..], window);
+soc.Send(mapWindow);
+
+var isRunning = true;
+
+while (isRunning)
+{
+    var rent = ArrayPool<byte>.Shared.Rent(1024 * 2); // should not be more than event size assuming.
+
+    var totalRead = await soc.ReceiveAsync(rent);
+    Console.WriteLine($"received event. {totalRead}");
+    if (rent[0] == 0)
+    {
+        System.Console.WriteLine();
+    }
+    else if (rent[0] == 1)
+    {
+        System.Console.WriteLine("got reply");
+    }
+    else
+    {
+        System.Console.WriteLine($"event {rent[0]}");
+    }
+    ArrayPool<byte>.Shared.Return(rent);
+
+}
 Console.WriteLine();

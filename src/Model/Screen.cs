@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -71,7 +72,7 @@ public class Screen
         return dept;
     }
 
-    public int FillTheDepth(Span<byte> reader)
+    public int FillTheDepth(Span<byte> reader, System.Net.Sockets.Socket stream)
     {
         var readIndex = 0;
         for (var i = 0; i < Depths.Length; i++)
